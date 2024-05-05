@@ -71,8 +71,8 @@ function PointLight(props){
     light.current.position.z = Math.sin(count.current)*300;
   })
   return (
-    <pointLight castShadow position={[300,100,0]} intensity={100000} color="#fff" shadow-mapSize-height={512}
-    shadow-mapSize-width={512} shadow-camera-far={1000} shadow-camera-near={1} ref={light} />
+    <pointLight castShadow position={[300,100,0]} intensity={100000} color="#fff" shadow-mapSize-height={2048}
+    shadow-mapSize-width={2048} shadow-camera-far={1000} shadow-camera-near={1} ref={light} />
   )
 }
 
