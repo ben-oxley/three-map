@@ -72,12 +72,32 @@ function createPeerConnection() {
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
 }
 
+
 async function makeCall() {
     console.log('call');
     await createPeerConnection();
+    // note the following should be called before before calling either RTCPeerConnection.createOffer() or createAnswer()
+    let tcvr = pc.getTransceivers()[0];
+    let codecs = RTCRtpReceiver.getCapabilities('video').codecs;
+    let vp9_codecs = [];
+    // iterate over supported codecs and pull out the codecs we want
+    for (let i = 0; i < codecs.length; i++) {
+        console.log(codecs[i]);
+        if (codecs[i].mimeType == "video/VP9") {
+            vp9_codecs.push(codecs[i]);
+        }
+    }
+    // currently not all browsers support setCodecPreferences
+    if (tcvr.setCodecPreferences != undefined) {
+        tcvr.setCodecPreferences(vp9_codecs);
+    }
+    const senders = pc.getSenders();
+    const parameters = senders[0].getParameters();
+    parameters.encodings[0].maxBitrate = 100000000;
 
+    senders[0].setParameters(parameters);
     const offer = await pc.createOffer();
-    signaling.postMessage({ type: 'offer', sdp: offer.sdp});
+    signaling.postMessage({ type: 'offer', sdp: offer.sdp });
     await pc.setLocalDescription(offer);
 }
 
@@ -89,17 +109,22 @@ async function handleOffer(offer) {
     }
     await createPeerConnection();
     await pc.setRemoteDescription(offer);
-
-    const answer = await pc.createAnswer();
-    var arr = answer.sdp.split('\r\n');
-    arr.forEach((str, i) => {
-        if (/^a=fmtp:\d*/.test(str)) {
-        arr[i] = str + ';x-google-max-bitrate=100000;x-google-min-bitrate=0;x-google-start-bitrate=60000';
-        } else if (/^a=mid:(1|video)/.test(str)) {
-        arr[i] += '\r\nb=AS:10000';
+    // note the following should be called before before calling either RTCPeerConnection.createOffer() or createAnswer()
+    let tcvr = pc.getTransceivers()[0];
+    let codecs = RTCRtpReceiver.getCapabilities('video').codecs;
+    let vp8_codecs = [];
+    // iterate over supported codecs and pull out the codecs we want
+    for (let i = 0; i < codecs.length; i++) {
+        console.log(codecs[i])
+        if (codecs[i].mimeType == "video/VP8") {
+            vp8_codecs.push(codecs[i]);
         }
-    });
-    answer.sdp = arr.join('\r\n');
+    }
+    // currently not all browsers support setCodecPreferences
+    if (tcvr.setCodecPreferences != undefined) {
+        tcvr.setCodecPreferences(vp8_codecs);
+    }
+    const answer = await pc.createAnswer();
     signaling.postMessage({ type: 'answer', sdp: answer.sdp });
     await pc.setLocalDescription(answer);
 }

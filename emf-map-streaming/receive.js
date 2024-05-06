@@ -65,8 +65,6 @@ async function hangup() {
         pc.close();
         pc = null;
     }
-    localStream.getTracks().forEach(track => track.stop());
-    localStream = null;
     startButton.disabled = false;
     hangupButton.disabled = true;
 };

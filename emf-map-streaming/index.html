@@ -15,8 +15,8 @@
     html,
     body,
     #map {
-      height: 100%;
-      aspect-ratio:  10/16;
+      height: 1920px;
+      width: 1080px;
     }
   </style>
 </head>
@@ -30,8 +30,8 @@
     const map = (window.map = new maplibregl.Map({
       container: 'map',
       //maxBounds: bounds,
-      zoom: 16.23,
-      center: [-2.37701, 52.041367],
+      zoom: 17.12,
+      center: [-2.377036, 52.04143],
       hash: true,
       style: './styles.json',
       maxZoom: 22,
@@ -53,7 +53,7 @@
     //   })
     // );
 
-    map.rotateTo(20);
+    map.rotateTo(25);
   </script>
   <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   <script src="stream.js"></script>
