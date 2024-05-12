@@ -5,7 +5,7 @@ This program needs obj files with UV mapping included. These can be exported fro
 - Go to UV Editing tab
 - Unselect all points
 - Look top down( click on z in the axis viewer)
-- Select points so that you only select points on the top side
+- Select Menu -> Select All
 - Click the UV sub-tab
 - Switch to project from view (bounds)
 - Export as obj
