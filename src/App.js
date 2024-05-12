@@ -4,15 +4,17 @@ import { FC, useRef, useState, useEffect, useMemo } from 'react'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { TextureLoader } from 'three/src/loaders/TextureLoader'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
+import { GlitchMode, BlendFunction } from 'postprocessing'
+import { EffectComposer,ASCII, Pixelation, DotScreen, Noise, Outline, Glitch, ColorAverage, ToneMapping} from '@react-three/postprocessing'
 import { OrbitControls, TransformControls, useCursor, PerspectiveCamera, CameraControls, Plane, useTexture, MeshPortalMaterial } from '@react-three/drei'
 import { MeshPhongMaterial } from 'three';
 
 function App() {
-  const geom = useLoader(OBJLoader, './eastnor-v1-lq2.obj');
+  const geom = useLoader(OBJLoader, './real-size-lq.obj');
   const ref = useRef();
   const camera = useRef();
-  const cameraview = { enabled: true, fullWidth: 1280, fullHeight: 800, offsetX: 0, offsetY: 400, width: 1280, height: 800 }
-  const colorMap = useLoader(TextureLoader, "map2.png");
+  const cameraview = { enabled: true, fullWidth: 1920, fullHeight: 1080, offsetX: 0, offsetY: 540, width: 1920, height: 1080 }
+  const colorMap = useLoader(TextureLoader, "custom-textures/map-sat-rotated-3857.png");
   const geometry = useMemo(() => {
     let g;
     geom.traverse((c) => {
@@ -30,21 +32,35 @@ function App() {
     <div id="canvas-container">
       <Canvas shadows={{ type: "BasicShadowMap" }}>
         {/* <ambientLight intensity={1}></ambientLight> */}
-        <PerspectiveCamera makeDefault position={[400, 0, 0]} fov={72 / 2} ref={camera} far={5000000} view={cameraview} />
-        <mesh ref={ref} position={[0, 0, 371.62 / 2]} rotation={[0, 0, 0]} geometry={geometry} castShadow receiveShadow>
+        <PerspectiveCamera makeDefault position={[1100, 0, 0]} fov={45} ref={camera} far={5000000} view={cameraview} />
+        <mesh ref={ref} position={[343, -50, 160]} rotation={[0, 0, 0]} geometry={geometry} castShadow receiveShadow>
           <meshStandardMaterial map={colorMap} />
         </mesh>
         {/* <pointLight castShadow position={[Math.sin(count.current), 100, Math.cos(count.current)]} intensity={100000} color="#fff" shadow-mapSize-height={512}
           shadow-mapSize-width={512} shadow-camera-far={1000} shadow-camera-near={1} /> */}
         <PointLight></PointLight>
         <Plane
-          receiveShadow
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, -100, 0]}
-          args={[1000, 1000]}
+          args={[10000, 10000]}
         >
           <meshStandardMaterial attach="material" color="black" />
         </Plane>
+        <EffectComposer>
+        {/* <ASCII></ASCII> */}
+        {/* <Pixelation
+          granularity={5} // pixel granularity
+        /> */}
+        {/* <DotScreen></DotScreen> */}
+        {/* <Glitch
+          delay={[1.5, 3.5]} // min and max glitch delay
+          duration={[0.6, 1.0]} // min and max glitch duration
+          strength={[0.1, 0.3]} // min and max glitch strength
+          mode={GlitchMode.SPORADIC} // glitch mode
+          active // turn on/off the effect (switches between "mode" prop and GlitchMode.DISABLED)
+          ratio={0.85} // Threshold for strong glitches, 0 - no weak glitches, 1 - no strong glitches.
+        /> */}
+      </EffectComposer>
         <Controls></Controls>
       </Canvas>
     </div>
@@ -67,12 +83,12 @@ function PointLight(props){
   useFrame(() => {
     
     count.current = count.current + 0.01;
-    light.current.position.x = Math.cos(count.current)*300;
+    light.current.position.x = 400+Math.cos(count.current)*300;
     light.current.position.z = Math.sin(count.current)*300;
   })
   return (
-    <pointLight castShadow position={[300,100,0]} intensity={100000} color="#fff" shadow-mapSize-height={2048}
-    shadow-mapSize-width={2048} shadow-camera-far={1000} shadow-camera-near={1} ref={light} />
+    <pointLight castShadow position={[0,300,0]} intensity={1000000} color="#fff" shadow-mapSize-height={2048}
+    shadow-mapSize-width={2048} shadow-camera-far={3000} shadow-camera-near={1} ref={light} />
   )
 }
 
