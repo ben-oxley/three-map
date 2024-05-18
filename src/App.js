@@ -8,6 +8,8 @@ import { GlitchMode, BlendFunction } from 'postprocessing'
 import { EffectComposer, ASCII, Pixelation, DotScreen, Noise, Outline, Glitch, ColorAverage, ToneMapping } from '@react-three/postprocessing'
 import { OrbitControls, TransformControls, useCursor, PerspectiveCamera, CameraControls, Plane, useTexture, MeshPortalMaterial } from '@react-three/drei'
 import { MeshPhongMaterial } from 'three';
+import useMqtt from './useMqtt'
+import mqtt from 'mqtt';
 
 //Texture
 //https://github.com/pmndrs/react-three-fiber/discussions/2288
@@ -21,6 +23,7 @@ import { MeshPhongMaterial } from 'three';
 //</meshBasicMaterial>
 
 function App() {
+  const [effect, setEffect] = useState("");
   const geom = useLoader(OBJLoader, './real-size-lq.obj');
   const ref = useRef();
   const cvs = useRef();
@@ -55,20 +58,47 @@ function App() {
     return g;
   }, [geom]);
 
+
+  const { mqttSubscribe, mqttPublish, isConnected, payload } = useMqtt();
+
+
+  useEffect(() => {
+    if (isConnected) {
+      mqttSubscribe('#');
+    }
+  }, [isConnected]);
+
+  useEffect(() => {
+    if (payload.message
+      && ['add', "remove", "state", "effect", "geteffect"].includes(payload.topic)
+    ) {
+      if (payload.topic == "effect") {
+        setEffect(payload.message)
+      }
+      if (payload.topic == "geteffect") {
+        mqttPublish('effect', effect)
+      }
+    }
+  }, [payload]);
+
+
+
+
+
   return (
     <div id="canvas-container">
       <Canvas shadows={{ type: "BasicShadowMap" }}>
         {/* <ambientLight intensity={1}></ambientLight> */}
         <PerspectiveCamera makeDefault position={[1100, 0, 0]} fov={45} ref={camera} far={5000000} view={cameraview} />
         <mesh ref={ref} position={[343, -50, 160]} rotation={[0, 0, 0]} geometry={geometry} castShadow receiveShadow>
-          {/* <meshStandardMaterial map={colorMap} /> */}
-          <meshBasicMaterial>
+          <meshStandardMaterial map={colorMap} />
+          {/* <meshBasicMaterial>
             <canvasTexture
               ref={textureRef}
               attach="map"
               image={canvasRef.current}
             />
-          </meshBasicMaterial>
+          </meshBasicMaterial> */}
         </mesh>
         {/* <pointLight castShadow position={[Math.sin(count.current), 100, Math.cos(count.current)]} intensity={100000} color="#fff" shadow-mapSize-height={512}
           shadow-mapSize-width={512} shadow-camera-far={1000} shadow-camera-near={1} /> */}
@@ -81,19 +111,19 @@ function App() {
           <meshStandardMaterial attach="material" color="black" />
         </Plane>
         <EffectComposer>
-          {/* <ASCII></ASCII> */}
-          {/* <Pixelation
-          granularity={5} // pixel granularity
-        /> */}
-          {/* <DotScreen></DotScreen> */}
-          {/* <Glitch
-          delay={[1.5, 3.5]} // min and max glitch delay
-          duration={[0.6, 1.0]} // min and max glitch duration
-          strength={[0.1, 0.3]} // min and max glitch strength
-          mode={GlitchMode.SPORADIC} // glitch mode
-          active // turn on/off the effect (switches between "mode" prop and GlitchMode.DISABLED)
-          ratio={0.85} // Threshold for strong glitches, 0 - no weak glitches, 1 - no strong glitches.
-        /> */}
+          {effect === "ascii" && <ASCII></ASCII>}
+          {effect === "pixel" && <Pixelation
+            granularity={5} // pixel granularity
+          />}
+          {effect === "dot" && <DotScreen></DotScreen>}
+          {effect === "glitch" && <Glitch
+            delay={[1.5, 3.5]} // min and max glitch delay
+            duration={[0.6, 1.0]} // min and max glitch duration
+            strength={[0.1, 0.3]} // min and max glitch strength
+            mode={GlitchMode.SPORADIC} // glitch mode
+            active // turn on/off the effect (switches between "mode" prop and GlitchMode.DISABLED)
+            ratio={0.85} // Threshold for strong glitches, 0 - no weak glitches, 1 - no strong glitches.
+          />}
         </EffectComposer>
         <Controls></Controls>
       </Canvas>
