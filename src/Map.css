@@ -1,8 +1,0 @@
-.map-wrap {
-    position: fixed;
-    bottom: 0;
-    top: 2000px;
-    width: 1080px;
-    height: 1920px; /* calculate height of the screen minus the heading */
-  }
-  

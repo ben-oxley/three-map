@@ -16,7 +16,7 @@
         },
         "villages": {
             "type": "geojson",
-            "data": "https://www.emfcamp.org/api/villages.geojson"
+            "data": "villages.geojson"
         },
         "slope": {
             "type": "raster",

@@ -4,11 +4,12 @@ import { FC, useRef, useState, useEffect, useMemo } from 'react'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { TextureLoader } from 'three/src/loaders/TextureLoader'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
-import { GlitchMode, BlendFunction } from 'postprocessing'
-import { EffectComposer, ASCII, Pixelation, DotScreen, Noise, Outline, Glitch, ColorAverage, ToneMapping } from '@react-three/postprocessing'
+import { GlitchMode, BlendFunction, BlurPass, Resizer, KernelSize, Resolution } from 'postprocessing'
+import { EffectComposer, ASCII, Pixelation, DotScreen, Noise, Outline, Glitch, ColorAverage, ToneMapping, Bloom, BrightnessContrast } from '@react-three/postprocessing'
 import { OrbitControls, TransformControls, useCursor, PerspectiveCamera, CameraControls, Plane, useTexture, MeshPortalMaterial } from '@react-three/drei'
-import { MeshPhongMaterial } from 'three';
+import { MeshPhongMaterial, Vector2 } from 'three';
 import useMqtt from './useMqtt'
+import {cvsData} from './image'
 import mqtt from 'mqtt';
 
 //Texture
@@ -21,7 +22,7 @@ import mqtt from 'mqtt';
 //  image={canvasRef.current} 
 ///>
 //</meshBasicMaterial>
-
+// Map set to #17.13/52.041397/-2.37697
 function App() {
   const [effect, setEffect] = useState("");
   const geom = useLoader(OBJLoader, './real-size-lq.obj');
@@ -34,15 +35,32 @@ function App() {
   const colorMap = useLoader(TextureLoader, "custom-textures/map-sat-rotated-3857.png");
   if (canvasRef.current.getContext) {
     const ctx = canvasRef.current.getContext("2d");
+    ctx.canvas.width  = 1080;
+    ctx.canvas.height = 1920;
+    
+    // // ctx.fillStyle = "rgb(255 255 255)";
+    // // ctx.fillRect(0, 0, 1000, 1000);
 
-    ctx.fillStyle = "rgb(255 255 255)";
-    ctx.fillRect(0, 0, 1000, 1000);
+    // // ctx.fillStyle = "rgb(200 0 0)";
+    // // ctx.fillRect(10, 10, 50, 50);
 
-    ctx.fillStyle = "rgb(200 0 0)";
-    ctx.fillRect(10, 10, 50, 50);
-
-    ctx.fillStyle = "rgb(0 0 200 / 50%)";
-    ctx.fillRect(30, 30, 50, 50);
+    // // ctx.fillStyle = "rgb(0 0 200 / 50%)";
+    // // ctx.fillRect(30, 30, 50, 50);
+    // ctx.fillStyle = "rgb(255 255 255)";
+    // ctx.fillRect(0, 0, 1000, 1000);
+    // for (let x = 0; x < 1000; x+=20){
+    //   for (let y = 0; y < 1000; y+=20){
+    //     ctx.fillStyle = "rgb(200 0 0)";
+    //     ctx.fillRect(x, y, 10, 10);
+    //   }
+    // }
+    // const ctx = canvasRef.current.getContext("2d");
+    canvasRef.current.needsUpdate = true;
+    var img = new Image;
+    img.onload = function(){
+      ctx.drawImage(img,0,0); // Or at whatever offset you like
+    };
+    img.src = localStorage.getItem('map');
 
   }
   const geometry = useMemo(() => {
@@ -88,21 +106,23 @@ function App() {
   return (
     <div id="canvas-container">
       <Canvas shadows={{ type: "BasicShadowMap" }}>
-        {/* <ambientLight intensity={1}></ambientLight> */}
+        <ambientLight intensity={0.5}></ambientLight>
+        <PointLight></PointLight>
         <PerspectiveCamera makeDefault position={[1100, 0, 0]} fov={45} ref={camera} far={5000000} view={cameraview} />
         <mesh ref={ref} position={[343, -50, 160]} rotation={[0, 0, 0]} geometry={geometry} castShadow receiveShadow>
-          <meshStandardMaterial map={colorMap} />
-          {/* <meshBasicMaterial>
+          {/* <meshStandardMaterial map={colorMap} /> */}
+          <meshStandardMaterial wireframe={effect === "wireframe"} emissiveIntensity={2} toneMapped={false}> 
             <canvasTexture
               ref={textureRef}
               attach="map"
               image={canvasRef.current}
+              repeat={new Vector2(1,1)}
             />
-          </meshBasicMaterial> */}
+          </meshStandardMaterial>
         </mesh>
         {/* <pointLight castShadow position={[Math.sin(count.current), 100, Math.cos(count.current)]} intensity={100000} color="#fff" shadow-mapSize-height={512}
           shadow-mapSize-width={512} shadow-camera-far={1000} shadow-camera-near={1} /> */}
-        <PointLight></PointLight>
+        
         <Plane
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, -100, 0]}
@@ -124,10 +144,23 @@ function App() {
             active // turn on/off the effect (switches between "mode" prop and GlitchMode.DISABLED)
             ratio={0.85} // Threshold for strong glitches, 0 - no weak glitches, 1 - no strong glitches.
           />}
+           {effect === "bloom" &&<Bloom
+              intensity={5.0} // The bloom intensity.
+              blurPass={undefined} // A blur pass.
+              kernelSize={KernelSize.LARGE} // blur kernel size
+              luminanceThreshold={0.2} // luminance threshold. Raise this value to mask out darker elements in the scene.
+              luminanceSmoothing={0.025} // smoothness of the luminance threshold. Range is [0, 1]
+              mipmapBlur={false} // Enables or disables mipmap blur.
+              resolutionX={Resolution.AUTO_SIZE} // The horizontal resolution.
+              resolutionY={Resolution.AUTO_SIZE} // The vertical resolution.
+            /> }
+             <BrightnessContrast
+              brightness={0} // brightness. min: -1, max: 1
+              contrast={0.5} // contrast: min -1, max: 1
+            />
         </EffectComposer>
         <Controls></Controls>
       </Canvas>
-      <Canvas ref={cvs}></Canvas>
     </div>
   );
 }
@@ -147,9 +180,9 @@ function PointLight(props) {
   const light = useRef();
   useFrame(() => {
 
-    count.current = count.current + 0.01;
-    light.current.position.x = 400 + Math.cos(count.current) * 300;
-    light.current.position.z = Math.sin(count.current) * 300;
+    count.current = count.current + 0.001;
+    light.current.position.x = 400 + Math.cos(count.current) * 1000;
+    light.current.position.y = Math.abs(Math.sin(count.current) * 1000)-100;
   })
   return (
     <pointLight castShadow position={[0, 300, 0]} intensity={1000000} color="#fff" shadow-mapSize-height={2048}
