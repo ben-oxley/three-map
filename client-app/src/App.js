@@ -4,19 +4,20 @@ import mqtt from 'mqtt';
 import logo from './logo.svg';
 import './App.css';
 const layers = {
-  Background: "background_",
-  Slope: "slope",
-  Hillshade: "hillshade",
-  "Aerial Imagery": "ortho",
-  Structures: "structures_",
-  Paths: "paths_",
-  "Buried Services": "services_",
-  Water: "site_water_",
-  DKs: "dk_",
-  "NOC-Physical": "noc_",
-  Power: "power_",
-  Lighting: "lighting_",
-  Villages: "villages_"
+  Background: 'background_',
+  Slope: 'slope',
+  Hillshade: 'hillshade',
+  'Aerial Imagery': 'ortho',
+  Structures: 'structures_',
+  Paths: 'paths_',
+  'Buried Services': 'services_',
+  Water: 'site_water_',
+  DKs: 'dk_',
+  'NOC-Physical': 'noc_',
+  Power: 'power_',
+  Lighting: 'lighting_',
+  Villages: 'villages_',
+  'Vehicle tracking': 'vehicles',
 };
 
 const layerIDs = {
@@ -32,13 +33,16 @@ const layerIDs = {
   S: "Slope",
   St: "Structures",
   V: "Villages",
-  W: "Water"
+  W: "Water",
+  Vi: "Vehicle tracking"
 }
 const effects = [
   "ascii",
   "dot",
   "pixel",
-  "glitch"
+  "glitch",
+  "bloom",
+  "wireframe"
 ]
 
 
@@ -52,6 +56,8 @@ function App() {
   useEffect(() => {
     if (isConnected) {
       mqttSubscribe('#');
+      mqttPublish('geteffect','')
+      mqttPublish('getstate','')
     }
   }, [isConnected]);
 
