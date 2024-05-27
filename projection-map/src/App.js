@@ -27,42 +27,10 @@ function App() {
   const [effect, setEffect] = useState("");
   const geom = useLoader(OBJLoader, './real-size-lq.obj');
   const ref = useRef();
-  const cvs = useRef();
   const camera = useRef();
-  const canvasRef = useRef(document.createElement("canvas"));
-  const textureRef = useRef();
   const cameraview = { enabled: true, fullWidth: 1920, fullHeight: 1080, offsetX: 0, offsetY: 540, width: 1920, height: 1080 }
   const colorMap = useLoader(TextureLoader, "custom-textures/map-sat-rotated-3857.png");
-  if (canvasRef.current.getContext) {
-    const ctx = canvasRef.current.getContext("2d");
-    ctx.canvas.width  = 1080;
-    ctx.canvas.height = 1920;
-    
-    // // ctx.fillStyle = "rgb(255 255 255)";
-    // // ctx.fillRect(0, 0, 1000, 1000);
 
-    // // ctx.fillStyle = "rgb(200 0 0)";
-    // // ctx.fillRect(10, 10, 50, 50);
-
-    // // ctx.fillStyle = "rgb(0 0 200 / 50%)";
-    // // ctx.fillRect(30, 30, 50, 50);
-    // ctx.fillStyle = "rgb(255 255 255)";
-    // ctx.fillRect(0, 0, 1000, 1000);
-    // for (let x = 0; x < 1000; x+=20){
-    //   for (let y = 0; y < 1000; y+=20){
-    //     ctx.fillStyle = "rgb(200 0 0)";
-    //     ctx.fillRect(x, y, 10, 10);
-    //   }
-    // }
-    // const ctx = canvasRef.current.getContext("2d");
-    canvasRef.current.needsUpdate = true;
-    var img = new Image;
-    img.onload = function(){
-      ctx.drawImage(img,0,0); // Or at whatever offset you like
-    };
-    img.src = localStorage.getItem('map');
-
-  }
   const geometry = useMemo(() => {
     let g;
     geom.traverse((c) => {
@@ -105,19 +73,14 @@ function App() {
 
   return (
     <div id="canvas-container">
-      <Canvas shadows={{ type: "BasicShadowMap" }}>
+      <Canvas shadows={{ type: "BasicShadowMap" }} gl={{ preserveDrawingBuffer: true }}>
         <ambientLight intensity={0.5}></ambientLight>
         <PointLight></PointLight>
         <PerspectiveCamera makeDefault position={[1100, 0, 0]} fov={45} ref={camera} far={5000000} view={cameraview} />
         <mesh ref={ref} position={[343, -50, 160]} rotation={[0, 0, 0]} geometry={geometry} castShadow receiveShadow>
           {/* <meshStandardMaterial map={colorMap} /> */}
           <meshStandardMaterial wireframe={effect === "wireframe"} emissiveIntensity={2} toneMapped={false}> 
-            <canvasTexture
-              ref={textureRef}
-              attach="map"
-              image={canvasRef.current}
-              repeat={new Vector2(1,1)}
-            />
+            <MapCanvas></MapCanvas>
           </meshStandardMaterial>
         </mesh>
         {/* <pointLight castShadow position={[Math.sin(count.current), 100, Math.cos(count.current)]} intensity={100000} color="#fff" shadow-mapSize-height={512}
@@ -187,6 +150,59 @@ function PointLight(props) {
   return (
     <pointLight castShadow position={[0, 300, 0]} intensity={1000000} color="#fff" shadow-mapSize-height={2048}
       shadow-mapSize-width={2048} shadow-camera-far={3000} shadow-camera-near={1} ref={light} />
+  )
+}
+
+function MapCanvas(props){
+
+  const [count, setCount] = useState(0);
+  const [prevCount, setPrevCount] = useState(0);
+  const canvasRef = useRef(document.createElement("canvas"));
+  const textureRef = useRef();
+
+  if (canvasRef.current.getContext) {
+    const ctx = canvasRef.current.getContext("2d");
+    if (ctx.canvas.width != 1080) ctx.canvas.width  = 1080;
+    if (ctx.canvas.height != 1920) ctx.canvas.height  = 1920;
+
+  }
+
+  useEffect(() => {
+      //Implementing the setInterval method
+      const interval = setInterval(() => {
+          setCount(count + 1);
+      }, 1000);
+
+      //Clearing the interval
+      return () => clearInterval(interval);
+  }, [count]);
+
+  useFrame(({ clock })=>{
+    if (prevCount!=count){
+      if (canvasRef.current.getContext) {
+        const ctx = canvasRef.current.getContext("2d");
+        
+        if (textureRef.current) {
+          textureRef.current.needsUpdate = true;
+        }
+        var img = new Image;
+        img.onload = function(){
+          ctx.drawImage(img,0,0); // Or at whatever offset you like
+        };
+        img.src = localStorage.getItem('map');
+    
+      }
+      setPrevCount(count);
+    }
+  });
+
+  return(
+    <canvasTexture
+              ref={textureRef}
+              attach="map"
+              image={canvasRef.current}
+              repeat={new Vector2(1,1)}
+            />
   )
 }
 
