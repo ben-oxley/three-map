@@ -12,6 +12,7 @@ const setting = {
     }
 }
 
+let count = 0;
 
 
 export function useMQTT(map: maplibregl.Map, layerSwitcher: LayerSwitcher) {
@@ -70,6 +71,8 @@ export function useMQTT(map: maplibregl.Map, layerSwitcher: LayerSwitcher) {
         if (p.topic == 'state'){
             let str = layerSwitcher.setURLString(p.message);
             layerSwitcher._updateVisibility();
+            let data = map.getCanvas().toDataURL();
+            localStorage.setItem('map', data)
         }
     })
 }

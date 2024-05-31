@@ -1,7 +1,6 @@
 FROM emf-map as base
 
 WORKDIR /app
-COPY mqtt.ts src/mqtt.ts
 RUN npm i -s mqtt@5.6.0
 COPY mqtt.ts src/mqtt.ts
 COPY exportmap.ts src/exportmap.ts

@@ -32,9 +32,9 @@ const layerIDs = {
   Po: "Power",
   S: "Slope",
   St: "Structures",
-  V: "Villages",
+  Vi: "Villages",
   W: "Water",
-  Vi: "Vehicle tracking"
+  V: "Vehicle tracking"
 }
 const effects = [
   "ascii",
