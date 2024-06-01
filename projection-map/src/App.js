@@ -74,9 +74,9 @@ function App() {
   return (
     <div id="canvas-container">
       <Canvas shadows={{ type: "BasicShadowMap" }} gl={{ preserveDrawingBuffer: true }}>
-        <ambientLight intensity={0.5}></ambientLight>
+        <ambientLight intensity={0.3}></ambientLight>
         <PointLight></PointLight>
-        <PerspectiveCamera makeDefault position={[1100, 0, 0]} fov={45} ref={camera} far={5000000} view={cameraview} />
+        <PerspectiveCamera makeDefault position={[1000, 0, 0]} fov={45} ref={camera} far={5000000} view={cameraview} />
         <mesh ref={ref} position={[343, -50, 160]} rotation={[0, 0, 0]} geometry={geometry} castShadow receiveShadow>
           {/* <meshStandardMaterial map={colorMap} /> */}
           <meshStandardMaterial wireframe={effect === "wireframe"} emissiveIntensity={2} toneMapped={false}> 
@@ -148,7 +148,7 @@ function PointLight(props) {
     light.current.position.y = Math.abs(Math.sin(count.current) * 1000)-100;
   })
   return (
-    <pointLight castShadow position={[0, 300, 0]} intensity={1000000} color="#fff" shadow-mapSize-height={2048}
+    <pointLight castShadow position={[0, 300, 0]} intensity={2000000} color="#fff" shadow-mapSize-height={2048}
       shadow-mapSize-width={2048} shadow-camera-far={3000} shadow-camera-near={1} ref={light} />
   )
 }
