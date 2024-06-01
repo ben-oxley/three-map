@@ -7,7 +7,7 @@ const layers = {
   Background: 'background_',
   Slope: 'slope',
   Hillshade: 'hillshade',
-  'Aerial Imagery': 'ortho',
+  'Spiders': 'ortho',
   Structures: 'structures_',
   Paths: 'paths_',
   'Buried Services': 'services_',
@@ -21,7 +21,7 @@ const layers = {
 };
 
 const layerIDs = {
-  A: "Aerial Imagery",
+  A: "Spiders",
   B: "Background",
   Bu: "Buried Services",
   D: "DKs",
@@ -42,7 +42,8 @@ const effects = [
   "pixel",
   "glitch",
   "bloom",
-  "wireframe"
+  "wireframe",
+  "shader"
 ]
 
 

@@ -9,8 +9,13 @@ import { EffectComposer, ASCII, Pixelation, DotScreen, Noise, Outline, Glitch, C
 import { OrbitControls, TransformControls, useCursor, PerspectiveCamera, CameraControls, Plane, useTexture, MeshPortalMaterial } from '@react-three/drei'
 import { MeshPhongMaterial, Vector2 } from 'three';
 import useMqtt from './useMqtt'
-import {cvsData} from './image'
+import { cvsData } from './image'
 import mqtt from 'mqtt';
+
+
+import vertexShader from "!!raw-loader!./vertexShader.glsl";/* eslint import/no-webpack-loader-syntax: off */
+import fragmentShader from "!!raw-loader!./fragmentShader.glsl";/* eslint import/no-webpack-loader-syntax: off */
+
 
 //Texture
 //https://github.com/pmndrs/react-three-fiber/discussions/2288
@@ -79,13 +84,13 @@ function App() {
         <PerspectiveCamera makeDefault position={[1000, 0, 0]} fov={45} ref={camera} far={5000000} view={cameraview} />
         <mesh ref={ref} position={[343, -50, 160]} rotation={[0, 0, 0]} geometry={geometry} castShadow receiveShadow>
           {/* <meshStandardMaterial map={colorMap} /> */}
-          <meshStandardMaterial wireframe={effect === "wireframe"} emissiveIntensity={2} toneMapped={false}> 
+          {effect == "shader" ? <MovingPlane></MovingPlane> : <meshStandardMaterial wireframe={effect === "wireframe"} emissiveIntensity={2} toneMapped={false}>
             <MapCanvas></MapCanvas>
-          </meshStandardMaterial>
+          </meshStandardMaterial>}
         </mesh>
         {/* <pointLight castShadow position={[Math.sin(count.current), 100, Math.cos(count.current)]} intensity={100000} color="#fff" shadow-mapSize-height={512}
           shadow-mapSize-width={512} shadow-camera-far={1000} shadow-camera-near={1} /> */}
-        
+
         <Plane
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, -100, 0]}
@@ -107,20 +112,20 @@ function App() {
             active // turn on/off the effect (switches between "mode" prop and GlitchMode.DISABLED)
             ratio={0.85} // Threshold for strong glitches, 0 - no weak glitches, 1 - no strong glitches.
           />}
-           {effect === "bloom" &&<Bloom
-              intensity={5.0} // The bloom intensity.
-              blurPass={undefined} // A blur pass.
-              kernelSize={KernelSize.LARGE} // blur kernel size
-              luminanceThreshold={0.2} // luminance threshold. Raise this value to mask out darker elements in the scene.
-              luminanceSmoothing={0.025} // smoothness of the luminance threshold. Range is [0, 1]
-              mipmapBlur={false} // Enables or disables mipmap blur.
-              resolutionX={Resolution.AUTO_SIZE} // The horizontal resolution.
-              resolutionY={Resolution.AUTO_SIZE} // The vertical resolution.
-            /> }
-             <BrightnessContrast
-              brightness={0} // brightness. min: -1, max: 1
-              contrast={0.5} // contrast: min -1, max: 1
-            />
+          {effect === "bloom" && <Bloom
+            intensity={5.0} // The bloom intensity.
+            blurPass={undefined} // A blur pass.
+            kernelSize={KernelSize.LARGE} // blur kernel size
+            luminanceThreshold={0.2} // luminance threshold. Raise this value to mask out darker elements in the scene.
+            luminanceSmoothing={0.025} // smoothness of the luminance threshold. Range is [0, 1]
+            mipmapBlur={false} // Enables or disables mipmap blur.
+            resolutionX={Resolution.AUTO_SIZE} // The horizontal resolution.
+            resolutionY={Resolution.AUTO_SIZE} // The vertical resolution.
+          />}
+          <BrightnessContrast
+            brightness={0} // brightness. min: -1, max: 1
+            contrast={0.5} // contrast: min -1, max: 1
+          />
         </EffectComposer>
         <Controls></Controls>
       </Canvas>
@@ -145,7 +150,7 @@ function PointLight(props) {
 
     count.current = count.current + 0.005;
     light.current.position.x = 400 + Math.cos(count.current) * 1000;
-    light.current.position.y = Math.abs(Math.sin(count.current) * 1000)-100;
+    light.current.position.y = Math.abs(Math.sin(count.current) * 1000) - 100;
   })
   return (
     <pointLight castShadow position={[0, 300, 0]} intensity={2000000} color="#fff" shadow-mapSize-height={2048}
@@ -153,7 +158,36 @@ function PointLight(props) {
   )
 }
 
-function MapCanvas(props){
+
+const MovingPlane = () => {
+  // This reference will give us direct access to the mesh
+  const material = useRef();
+
+  const uniforms = useMemo(
+    () => ({
+      u_time: {
+        value: 0.0,
+      },
+    }), []
+  );
+
+  useFrame((state) => {
+    const { clock } = state;
+    material.current.uniforms.u_time.value = clock.getElapsedTime();
+  });
+
+  return (
+
+    <shaderMaterial ref={material}
+      fragmentShader={fragmentShader}
+      vertexShader={vertexShader}
+      uniforms={uniforms}
+      wireframe={false}
+    />
+  );
+};
+
+function MapCanvas(props) {
 
   const [count, setCount] = useState(0);
   const [prevCount, setPrevCount] = useState(0);
@@ -162,47 +196,47 @@ function MapCanvas(props){
 
   if (canvasRef.current.getContext) {
     const ctx = canvasRef.current.getContext("2d");
-    if (ctx.canvas.width != 1080) ctx.canvas.width  = 1080;
-    if (ctx.canvas.height != 1920) ctx.canvas.height  = 1920;
+    if (ctx.canvas.width != 1080) ctx.canvas.width = 1080;
+    if (ctx.canvas.height != 1920) ctx.canvas.height = 1920;
 
   }
 
   useEffect(() => {
-      //Implementing the setInterval method
-      const interval = setInterval(() => {
-          setCount(count + 1);
-      }, 250);
+    //Implementing the setInterval method
+    const interval = setInterval(() => {
+      setCount(count + 1);
+    }, 250);
 
-      //Clearing the interval
-      return () => clearInterval(interval);
+    //Clearing the interval
+    return () => clearInterval(interval);
   }, [count]);
 
-  useFrame(({ clock })=>{
-    if (prevCount!=count){
+  useFrame(({ clock }) => {
+    if (prevCount != count) {
       if (canvasRef.current.getContext) {
         const ctx = canvasRef.current.getContext("2d");
-        
+
         if (textureRef.current) {
           textureRef.current.needsUpdate = true;
         }
         var img = new Image;
-        img.onload = function(){
-          ctx.drawImage(img,0,0); // Or at whatever offset you like
+        img.onload = function () {
+          ctx.drawImage(img, 0, 0); // Or at whatever offset you like
         };
         img.src = localStorage.getItem('map');
-    
+
       }
       setPrevCount(count);
     }
   });
 
-  return(
+  return (
     <canvasTexture
-              ref={textureRef}
-              attach="map"
-              image={canvasRef.current}
-              repeat={new Vector2(1,1)}
-            />
+      ref={textureRef}
+      attach="map"
+      image={canvasRef.current}
+      repeat={new Vector2(1, 1)}
+    />
   )
 }
 
