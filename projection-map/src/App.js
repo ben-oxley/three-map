@@ -143,7 +143,7 @@ function PointLight(props) {
   const light = useRef();
   useFrame(() => {
 
-    count.current = count.current + 0.001;
+    count.current = count.current + 0.005;
     light.current.position.x = 400 + Math.cos(count.current) * 1000;
     light.current.position.y = Math.abs(Math.sin(count.current) * 1000)-100;
   })
@@ -171,7 +171,7 @@ function MapCanvas(props){
       //Implementing the setInterval method
       const interval = setInterval(() => {
           setCount(count + 1);
-      }, 1000);
+      }, 250);
 
       //Clearing the interval
       return () => clearInterval(interval);

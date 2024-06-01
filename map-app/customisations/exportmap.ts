@@ -7,5 +7,5 @@ export function exportMap(map: maplibregl.Map) {
        //document.getElementsByClassName('maplibregl-canvas')[0].toDataURL();
     }
     
-    setInterval(savecanvas, 1000)
+    setInterval(savecanvas, 250)
 }
