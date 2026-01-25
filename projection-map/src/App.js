@@ -223,7 +223,8 @@ function MapCanvas(props) {
         img.onload = function () {
           ctx.drawImage(img, 0, 0); // Or at whatever offset you like
         };
-        img.src = localStorage.getItem('map');
+        img.crossOrigin = "Anonymous";
+        img.src = `http://localhost:3000/map.png?t=${Date.now()}`;
 
       }
       setPrevCount(count);

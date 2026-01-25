@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Receiver Test</title>
+    <style>
+        body {
+            background: #222;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: sans-serif;
+        }
+
+        img {
+            max-width: 90%;
+            border: 2px solid #555;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Map Receiver</h1>
+    <p>Fetching from http://localhost:3000/map.png</p>
+    <img id="mapImage" src="http://localhost:3000/map.png" alt="Map Stream" />
+
+    <script>
+        const img = document.getElementById('mapImage');
+
+        setInterval(() => {
+            // Append timestamp to prevent browser caching
+            img.src = `http://localhost:3000/map.png?t=${Date.now()}`;
+        }, 1000);
+    </script>
+</body>
+
+</html>
