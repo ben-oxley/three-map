@@ -6,7 +6,8 @@ import { TextureLoader } from 'three/src/loaders/TextureLoader'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
 import { GlitchMode, BlendFunction, BlurPass, Resizer, KernelSize, Resolution } from 'postprocessing'
 import { EffectComposer, ASCII, Pixelation, DotScreen, Noise, Outline, Glitch, ColorAverage, ToneMapping, Bloom, BrightnessContrast } from '@react-three/postprocessing'
-import { OrbitControls, TransformControls, useCursor, PerspectiveCamera, CameraControls, Plane, useTexture, MeshPortalMaterial } from '@react-three/drei'
+import { OrbitControls, TransformControls, useCursor, PerspectiveCamera, CameraControls, Plane, useTexture, MeshPortalMaterial, RenderTexture, Text } from '@react-three/drei'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { MeshPhongMaterial, Vector2 } from 'three';
 import useMqtt from './useMqtt'
 import { cvsData } from './image'
@@ -14,7 +15,7 @@ import mqtt from 'mqtt';
 
 
 import vertexShader from "!!raw-loader!./vertexShader.glsl";/* eslint import/no-webpack-loader-syntax: off */
-import fragmentShader from "!!raw-loader!./fragmentShader.glsl";/* eslint import/no-webpack-loader-syntax: off */
+import fragmentShader from "!!raw-loader!./shaders/clouds.glsl";/* eslint import/no-webpack-loader-syntax: off */
 
 
 //Texture
@@ -34,7 +35,7 @@ function App() {
   const ref = useRef();
   const camera = useRef();
   const cameraview = { enabled: true, fullWidth: 1920, fullHeight: 1080, offsetX: 0, offsetY: 540, width: 1920, height: 1080 }
-  const colorMap = useLoader(TextureLoader, "custom-textures/map-sat-rotated-3857.png");
+  const colorMap = useLoader(TextureLoader, "custom-textures/gemini-mars.png");
 
   const geometry = useMemo(() => {
     let g;
@@ -82,15 +83,21 @@ function App() {
         <ambientLight intensity={0.3}></ambientLight>
         <PointLight></PointLight>
         <PerspectiveCamera makeDefault position={[1000, 0, 0]} fov={45} ref={camera} far={5000000} view={cameraview} />
+        <Text font="Inter-Medium.woff" position={[300, 300, 500]} rotation={[-Math.PI / 2, 0, 0]} fontSize={40} letterSpacing={-0.1} color={'#35c19f'}>
+          Stage A
+        </Text>
         <mesh ref={ref} position={[343, -50, 160]} rotation={[0, 0, 0]} geometry={geometry} castShadow receiveShadow>
-          {/* <meshStandardMaterial map={colorMap} /> */}
-          {effect == "shader" ? <MovingPlane></MovingPlane> : <meshStandardMaterial wireframe={effect === "wireframe"} emissiveIntensity={2} toneMapped={false}>
+          <RenderTexture></RenderTexture>
+          <meshStandardMaterial map={colorMap} />
+          {/* <MovingPlane></MovingPlane> */}
+          {/* {effect == "shader" ? <MovingPlane></MovingPlane> : <meshStandardMaterial wireframe={effect === "wireframe"} emissiveIntensity={2} toneMapped={false}>
             <MapCanvas></MapCanvas>
-          </meshStandardMaterial>}
+          </meshStandardMaterial>} */}
         </mesh>
         {/* <pointLight castShadow position={[Math.sin(count.current), 100, Math.cos(count.current)]} intensity={100000} color="#fff" shadow-mapSize-height={512}
           shadow-mapSize-width={512} shadow-camera-far={1000} shadow-camera-near={1} /> */}
-
+        <FlyingShip></FlyingShip>
+        <FlyingShip2></FlyingShip2>
         <Plane
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, -100, 0]}
@@ -143,6 +150,46 @@ function Controls(props) {
   )
 }
 
+function FlyingShip() {
+  const ref = useRef();
+  const count = useRef(0.0);
+  const gltf = useLoader(GLTFLoader, "spaceship.glb")
+
+  useFrame(() => {
+    count.current = count.current + 0.005;
+    ref.current.position.z = 1000 - ((count.current * 1000) % 2000);
+    ref.current.rotation.z = Math.sin(count.current * 10) / 10;
+    ref.current.position.y = 200;
+    ref.current.rotation.y = Math.PI;
+    if (ref.current.position.z <= -990) {
+      ref.current.position.x = Math.random() * 750;
+    }
+  })
+  return (
+    <primitive castShadow receiveShadow object={gltf.scene} scale={10.0} ref={ref} />
+  )
+}
+
+
+function FlyingShip2() {
+  const ref = useRef();
+  const count = useRef(0.0);
+  const gltf = useLoader(GLTFLoader, "spaceship2.glb")
+
+  useFrame(() => {
+    count.current = count.current + 0.005;
+    ref.current.position.z = ((count.current * 327) % 2000) - 1000;
+    ref.current.rotation.z = Math.sin(count.current * 10) / 10;
+    ref.current.position.y = 200;
+    if (ref.current.position.z <= -990) {
+      ref.current.position.x = Math.random() * 750;
+    }
+  })
+  return (
+    <primitive castShadow receiveShadow object={gltf.scene} scale={10.0} ref={ref} />
+  )
+}
+
 function PointLight(props) {
   const count = useRef(0.0);
   const light = useRef();
@@ -158,6 +205,30 @@ function PointLight(props) {
   )
 }
 
+function Screen({ children }) {
+  return (
+    <meshBasicMaterial toneMapped={false} scale={1000.0}>
+      <RenderTexture width={512} height={512} attach="map" anisotropy={16}>
+        {children}
+      </RenderTexture>
+    </meshBasicMaterial>
+  )
+}
+
+function ScreenText({ invert, x = 0, y = 1.2, ...props }) {
+  const textRef = useRef()
+  const rand = Math.random() * 10000
+  useFrame((state) => (textRef.current.position.x = x + Math.sin(rand + state.clock.elapsedTime / 4) * 8))
+  return (
+    <Screen {...props}>
+      <PerspectiveCamera makeDefault manual aspect={1 / 1} position={[0, 0, 15]} />
+      <color attach="background" args={[invert ? 'black' : '#35c19f']} />
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[10, 10, 5]} />
+
+    </Screen>
+  )
+}
 
 const MovingPlane = () => {
   // This reference will give us direct access to the mesh
@@ -167,6 +238,9 @@ const MovingPlane = () => {
     () => ({
       u_time: {
         value: 0.0,
+      },
+      u_resolution: {
+        value: [1920, 1080],
       },
     }), []
   );
