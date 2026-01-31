@@ -12,10 +12,14 @@ import { MeshPhongMaterial, Vector2 } from 'three';
 import useMqtt from './useMqtt'
 import { cvsData } from './image'
 import mqtt from 'mqtt';
-
+import ScheduleLayer from './ScheduleLayer'; // Added ScheduleLayer
 
 import vertexShader from "!!raw-loader!./vertexShader.glsl";/* eslint import/no-webpack-loader-syntax: off */
 import fragmentShader from "!!raw-loader!./shaders/clouds.glsl";/* eslint import/no-webpack-loader-syntax: off */
+
+const SHOW_SCHEDULE_LAYER = true; // Configurable toggle
+
+//Texture
 
 
 //Texture
@@ -94,6 +98,10 @@ function App() {
             <MapCanvas></MapCanvas>
           </meshStandardMaterial>} */}
         </mesh>
+
+        {/* EMF Schedule Layer */}
+        <ScheduleLayer visible={SHOW_SCHEDULE_LAYER} />
+
         {/* <pointLight castShadow position={[Math.sin(count.current), 100, Math.cos(count.current)]} intensity={100000} color="#fff" shadow-mapSize-height={512}
           shadow-mapSize-width={512} shadow-camera-far={1000} shadow-camera-near={1} /> */}
         <FlyingShip></FlyingShip>
