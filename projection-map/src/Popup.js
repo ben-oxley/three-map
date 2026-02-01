@@ -4,17 +4,22 @@ import React from 'react';
 // and we want to avoid complex dependency issues with the full Arwes library if unnecessary.
 // We implement a simple Frame-like container using the provided CSS styles.
 
-const Popup = ({ event, position, onClose }) => {
+const Popup = ({ event, position, onClose, isExiting, onExited }) => {
     if (!event) return null;
 
     return (
         <div
+            onAnimationEnd={() => {
+                if (isExiting && onExited) onExited();
+            }}
             style={{
                 width: '300px',
+                transform: 'scale(0.75) rotate(90deg)', // User requested 50% smaller and 90deg rotation
+                transformOrigin: 'center center',
                 padding: '2px', // simulation of border width
                 background: 'linear-gradient(to bottom right, var(--arwes-color-primary) 0%, transparent 20%, transparent 80%, var(--arwes-color-primary) 100%)',
                 position: 'relative',
-                clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)',
+                animation: isExiting ? 'contractHeight 0.5s ease-in forwards 0.2s' : 'expandHeight 0.5s ease-out forwards',
             }}
         >
             <div style={{
@@ -22,7 +27,9 @@ const Popup = ({ event, position, onClose }) => {
                 padding: '1rem',
                 clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)',
                 border: '1px solid var(--arwes-color-primary-dim)',
-                boxShadow: '0 0 10px var(--arwes-color-primary-glow)'
+                boxShadow: '0 0 10px var(--arwes-color-primary-glow)',
+                animation: isExiting ? 'fadeOut 0.2s ease-in forwards' : 'fadeIn 0.5s ease-out 0.2s forwards',
+                opacity: isExiting ? 1 : 0
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                     <h3 style={{
@@ -35,7 +42,10 @@ const Popup = ({ event, position, onClose }) => {
                         {event.location}
                     </h3>
                     <button
-                        onClick={onClose}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClose();
+                        }}
                         style={{
                             background: 'transparent',
                             border: 'none',

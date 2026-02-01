@@ -87,9 +87,6 @@ function App() {
         <ambientLight intensity={0.3}></ambientLight>
         <PointLight></PointLight>
         <PerspectiveCamera makeDefault position={[1000, 0, 0]} fov={45} ref={camera} far={5000000} view={cameraview} />
-        <Text font="Inter-Medium.woff" position={[300, 300, 500]} rotation={[-Math.PI / 2, 0, 0]} fontSize={40} letterSpacing={-0.1} color={'#35c19f'}>
-          Stage A
-        </Text>
         <mesh ref={ref} position={[343, -50, 160]} rotation={[0, 0, 0]} geometry={geometry} castShadow receiveShadow>
           <RenderTexture></RenderTexture>
           <meshStandardMaterial map={colorMap} />
