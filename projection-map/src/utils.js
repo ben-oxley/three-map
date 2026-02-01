@@ -13,10 +13,10 @@ const MAP_ROTATION_DEG = 25;
 const MAP_ROTATION_RAD = MAP_ROTATION_DEG * (Math.PI / 180);
 
 //Map is 750 units wide, map real scale is 355m, 
-const MAP_SCALE = 1.3;
+const MAP_SCALE = 1.38;
 
 // From App.js mesh position: [343, -50, 160]
-const MAP_OFFSET_THREEJS = { x: 343, y: -50, z: 0 };
+const MAP_OFFSET_THREEJS = { x: 300, y: -50, z: 25 };
 
 export const latLonToWorld = (lat, lon) => {
     // 1. Convert Lat/Lon to EPSG:3857
@@ -39,8 +39,8 @@ export const latLonToWorld = (lat, lon) => {
     // X -> X
     // Y (North) -> -Z (In Three.js, usually -Z is forward/North if Y is up)
     // Add the mesh offset
-    const worldX = xRot + MAP_OFFSET_THREEJS.x;
-    const worldZ = -yRot + MAP_OFFSET_THREEJS.z;
+    const worldX = xRot + MAP_OFFSET_THREEJS.x + 10;
+    const worldZ = -yRot + MAP_OFFSET_THREEJS.z - 10;
     const worldY = MAP_OFFSET_THREEJS.y + 50; // Slightly above the map plane
 
     return [worldX * MAP_SCALE, worldY, worldZ * MAP_SCALE];
