@@ -1,6 +1,6 @@
 import logo from './logo.svg';
 import './App.css';
-import { FC, useRef, useState, useEffect, useMemo } from 'react'
+import { FC, useRef, useState, useEffect, useMemo, useLayoutEffect, forwardRef } from 'react'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { TextureLoader } from 'three/src/loaders/TextureLoader'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
@@ -8,7 +8,7 @@ import { GlitchMode, BlendFunction, BlurPass, Resizer, KernelSize, Resolution } 
 import { EffectComposer, ASCII, Pixelation, DotScreen, Noise, Outline, Glitch, ColorAverage, ToneMapping, Bloom, BrightnessContrast } from '@react-three/postprocessing'
 import { OrbitControls, TransformControls, useCursor, PerspectiveCamera, CameraControls, Plane, useTexture, MeshPortalMaterial, RenderTexture, Text } from '@react-three/drei'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import { MeshPhongMaterial, Vector2 } from 'three';
+import { MeshPhongMaterial, Vector2, MathUtils } from 'three';
 import useMqtt from './useMqtt'
 import { cvsData } from './image'
 import mqtt from 'mqtt';
@@ -86,7 +86,7 @@ function App() {
       <Canvas shadows={{ type: "BasicShadowMap" }} gl={{ preserveDrawingBuffer: true }}>
         <ambientLight intensity={0.3}></ambientLight>
         <PointLight></PointLight>
-        <PerspectiveCamera makeDefault position={[1000, 0, 0]} fov={45} ref={camera} far={5000000} view={cameraview} />
+        <ProjectorCamera makeDefault position={[750, 0, 0]} ref={camera} TR={0.5} offsetDeg={10} aspect={16 / 9} near={0.1} far={5000000} view={cameraview} />
         <mesh ref={ref} position={[343, -50, 160]} rotation={[0, 0, 0]} geometry={geometry} castShadow receiveShadow>
           <RenderTexture></RenderTexture>
           <meshStandardMaterial map={colorMap} />
@@ -151,7 +151,7 @@ function Controls(props) {
   // Subscribe this component to the render-loop, rotate the mesh every frame
   // Return view, these are regular three.js elements expressed in JSX
   return (
-    <CameraControls ref={cameraControlsRef} azimuthAngle={3.14159265 / 2} polarAngle={0} makeDefault />
+    <CameraControls ref={cameraControlsRef} azimuthAngle={-3.14159265 / 2} polarAngle={0} makeDefault />
   )
 }
 
@@ -319,5 +319,40 @@ function MapCanvas(props) {
     />
   )
 }
+
+const ProjectorCamera = forwardRef(({ TR = 0.5, offsetDeg = 10, aspect = 16 / 9, near = 0.1, far = 100.0, ...props }, ref) => {
+  const localRef = useRef();
+
+  useLayoutEffect(() => {
+    if (!localRef.current) return;
+    const camera = localRef.current;
+
+    camera.updateProjectionMatrix = () => {
+      const offsetRad = MathUtils.degToRad(offsetDeg);
+
+      const widthAtNear = near / TR;
+      const halfWidth = widthAtNear / 2;
+      const left = -halfWidth;
+      const right = halfWidth;
+
+      const heightAtNear = widthAtNear / aspect;
+
+      const bottom = near * Math.tan(offsetRad);
+      const top = bottom + heightAtNear;
+
+      camera.projectionMatrix.makePerspective(left, right, top, bottom, near, far);
+      camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+    };
+
+    camera.updateProjectionMatrix();
+
+  }, [TR, offsetDeg, aspect, near, far]);
+
+  return <PerspectiveCamera ref={(node) => {
+    localRef.current = node;
+    if (typeof ref === 'function') ref(node);
+    else if (ref) ref.current = node;
+  }} {...props} />;
+});
 
 export default App;
