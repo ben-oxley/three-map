@@ -21,21 +21,21 @@ import fragmentShader from "!!raw-loader!./shaders/clouds.glsl";/* eslint import
 const SHOW_SCHEDULE_LAYER = true; // Configurable toggle
 
 const curve1 = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(-1000, 200, -1000),
-  new THREE.Vector3(500, 300, -500),
-  new THREE.Vector3(800, 150, 200),
-  new THREE.Vector3(500, 200, 800),
-  new THREE.Vector3(-500, 250, 1000),
-  new THREE.Vector3(-800, 200, 500),
+  new THREE.Vector3(-500, 200, -500),
+  new THREE.Vector3(250, 300, -250),
+  new THREE.Vector3(400, 150, 100),
+  new THREE.Vector3(250, 200, 400),
+  new THREE.Vector3(-250, 250, 500),
+  new THREE.Vector3(-400, 200, 250),
 ], true);
 
 const curve2 = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(1000, 200, 1000),
-  new THREE.Vector3(-500, 350, 500),
-  new THREE.Vector3(-800, 150, -200),
-  new THREE.Vector3(-500, 200, -800),
-  new THREE.Vector3(500, 250, -1000),
-  new THREE.Vector3(800, 200, -500),
+  new THREE.Vector3(500, 200, 500),
+  new THREE.Vector3(-250, 350, 250),
+  new THREE.Vector3(-400, 150, -100),
+  new THREE.Vector3(-250, 200, -400),
+  new THREE.Vector3(250, 250, -500),
+  new THREE.Vector3(400, 200, -250),
 ], true);
 
 //Texture
@@ -120,8 +120,8 @@ function App() {
 
         {/* <pointLight castShadow position={[Math.sin(count.current), 100, Math.cos(count.current)]} intensity={100000} color="#fff" shadow-mapSize-height={512}
           shadow-mapSize-width={512} shadow-camera-far={1000} shadow-camera-near={1} /> */}
-        <SplineShip modelPath="spaceship.glb" curve={curve1} speed={0.05} />
-        <SplineShip modelPath="spaceship2.glb" curve={curve2} speed={0.03} offset={0.5} />
+        <SplineShip modelPath="spaceship.glb" curve={curve1} speed={0.05} reverse={true} rotate180={true} />
+        <SplineShip modelPath="spaceship2.glb" curve={curve2} speed={0.03} offset={0.5} reverse={false} />
         <Plane
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, -100, 0]}
@@ -174,17 +174,28 @@ function Controls(props) {
   )
 }
 
-function SplineShip({ modelPath, curve, speed = 0.05, offset = 0, scale = 10.0, initialRotationY = Math.PI }) {
+function SplineShip({ modelPath, curve, speed = 0.05, offset = 0, scale = 10.0, initialRotationY = Math.PI, reverse = false, rotate180 = false }) {
   const groupRef = useRef();
   const gltf = useLoader(GLTFLoader, modelPath);
 
+  const finalRotationY = initialRotationY + (rotate180 ? Math.PI : 0);
+
   useFrame((state) => {
     if (!groupRef.current) return;
-    const t = ((state.clock.elapsedTime * speed) + offset) % 1.0;
+
+    let time = state.clock.elapsedTime * speed;
+    if (reverse) time = -time;
+
+    let t = (time + offset) % 1.0;
+    if (t < 0) t += 1.0; // Handle negative JS modulo
 
     // get position and tangent
     const pos = curve.getPointAt(t);
     const tangent = curve.getTangentAt(t).normalize();
+
+    if (reverse) {
+      tangent.negate();
+    }
 
     groupRef.current.position.copy(pos);
 
@@ -195,7 +206,7 @@ function SplineShip({ modelPath, curve, speed = 0.05, offset = 0, scale = 10.0, 
 
   return (
     <group ref={groupRef}>
-      <primitive castShadow receiveShadow object={gltf.scene} scale={scale} rotation={[0, initialRotationY, 0]} />
+      <primitive castShadow receiveShadow object={gltf.scene} scale={scale} rotation={[0, finalRotationY, 0]} />
     </group>
   )
 }
