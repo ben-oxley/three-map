@@ -9,6 +9,7 @@ import { EffectComposer, ASCII, Pixelation, DotScreen, Noise, Outline, Glitch, C
 import { OrbitControls, TransformControls, useCursor, PerspectiveCamera, CameraControls, Plane, useTexture, MeshPortalMaterial, RenderTexture, Text } from '@react-three/drei'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { MeshPhongMaterial, Vector2, MathUtils } from 'three';
+import * as THREE from 'three';
 import useMqtt from './useMqtt'
 import { cvsData } from './image'
 import mqtt from 'mqtt';
@@ -18,6 +19,24 @@ import vertexShader from "!!raw-loader!./vertexShader.glsl";/* eslint import/no-
 import fragmentShader from "!!raw-loader!./shaders/clouds.glsl";/* eslint import/no-webpack-loader-syntax: off */
 
 const SHOW_SCHEDULE_LAYER = true; // Configurable toggle
+
+const curve1 = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(-1000, 200, -1000),
+  new THREE.Vector3(500, 300, -500),
+  new THREE.Vector3(800, 150, 200),
+  new THREE.Vector3(500, 200, 800),
+  new THREE.Vector3(-500, 250, 1000),
+  new THREE.Vector3(-800, 200, 500),
+], true);
+
+const curve2 = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(1000, 200, 1000),
+  new THREE.Vector3(-500, 350, 500),
+  new THREE.Vector3(-800, 150, -200),
+  new THREE.Vector3(-500, 200, -800),
+  new THREE.Vector3(500, 250, -1000),
+  new THREE.Vector3(800, 200, -500),
+], true);
 
 //Texture
 
@@ -39,7 +58,7 @@ function App() {
   const ref = useRef();
   const camera = useRef();
   const cameraview = { enabled: true, fullWidth: 1920, fullHeight: 1080, offsetX: 0, offsetY: 540, width: 1920, height: 1080 }
-  const colorMap = useLoader(TextureLoader, "custom-textures/gemini-mars.png");
+  const colorMap = useLoader(TextureLoader, "custom-textures/earth-low-res.jpeg");
 
   const geometry = useMemo(() => {
     let g;
@@ -85,8 +104,8 @@ function App() {
     <div id="canvas-container">
       <Canvas shadows={{ type: "BasicShadowMap" }} gl={{ preserveDrawingBuffer: true }}>
         <ambientLight intensity={0.3}></ambientLight>
-        <PointLight></PointLight>
-        <ProjectorCamera makeDefault position={[750, 0, 0]} ref={camera} TR={0.5} offsetDeg={10} aspect={16 / 9} near={0.1} far={5000000} view={cameraview} />
+        <PointLight move={false}></PointLight>
+        <ProjectorCamera makeDefault position={[500, 0, 0]} ref={camera} TR={0.25} offsetDeg={20} aspect={16 / 9} near={0.1} far={5000000} view={cameraview} />
         <mesh ref={ref} position={[343, -50, 160]} rotation={[0, 0, 0]} geometry={geometry} castShadow receiveShadow>
           <RenderTexture></RenderTexture>
           <meshStandardMaterial map={colorMap} />
@@ -101,8 +120,8 @@ function App() {
 
         {/* <pointLight castShadow position={[Math.sin(count.current), 100, Math.cos(count.current)]} intensity={100000} color="#fff" shadow-mapSize-height={512}
           shadow-mapSize-width={512} shadow-camera-far={1000} shadow-camera-near={1} /> */}
-        <FlyingShip></FlyingShip>
-        <FlyingShip2></FlyingShip2>
+        <SplineShip modelPath="spaceship.glb" curve={curve1} speed={0.05} />
+        <SplineShip modelPath="spaceship2.glb" curve={curve2} speed={0.03} offset={0.5} />
         <Plane
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, -100, 0]}
@@ -155,43 +174,29 @@ function Controls(props) {
   )
 }
 
-function FlyingShip() {
-  const ref = useRef();
-  const count = useRef(0.0);
-  const gltf = useLoader(GLTFLoader, "spaceship.glb")
+function SplineShip({ modelPath, curve, speed = 0.05, offset = 0, scale = 10.0, initialRotationY = Math.PI }) {
+  const groupRef = useRef();
+  const gltf = useLoader(GLTFLoader, modelPath);
 
-  useFrame(() => {
-    count.current = count.current + 0.005;
-    ref.current.position.z = 1000 - ((count.current * 1000) % 2000);
-    ref.current.rotation.z = Math.sin(count.current * 10) / 10;
-    ref.current.position.y = 200;
-    ref.current.rotation.y = Math.PI;
-    if (ref.current.position.z <= -990) {
-      ref.current.position.x = Math.random() * 750;
-    }
-  })
+  useFrame((state) => {
+    if (!groupRef.current) return;
+    const t = ((state.clock.elapsedTime * speed) + offset) % 1.0;
+
+    // get position and tangent
+    const pos = curve.getPointAt(t);
+    const tangent = curve.getTangentAt(t).normalize();
+
+    groupRef.current.position.copy(pos);
+
+    // look at a point slightly ahead along the tangent
+    const target = pos.clone().add(tangent);
+    groupRef.current.lookAt(target);
+  });
+
   return (
-    <primitive castShadow receiveShadow object={gltf.scene} scale={10.0} ref={ref} />
-  )
-}
-
-
-function FlyingShip2() {
-  const ref = useRef();
-  const count = useRef(0.0);
-  const gltf = useLoader(GLTFLoader, "spaceship2.glb")
-
-  useFrame(() => {
-    count.current = count.current + 0.005;
-    ref.current.position.z = ((count.current * 327) % 2000) - 1000;
-    ref.current.rotation.z = Math.sin(count.current * 10) / 10;
-    ref.current.position.y = 200;
-    if (ref.current.position.z <= -990) {
-      ref.current.position.x = Math.random() * 750;
-    }
-  })
-  return (
-    <primitive castShadow receiveShadow object={gltf.scene} scale={10.0} ref={ref} />
+    <group ref={groupRef}>
+      <primitive castShadow receiveShadow object={gltf.scene} scale={scale} rotation={[0, initialRotationY, 0]} />
+    </group>
   )
 }
 
@@ -199,13 +204,14 @@ function PointLight(props) {
   const count = useRef(0.0);
   const light = useRef();
   useFrame(() => {
+    if (!props.move) return;
 
     count.current = count.current + 0.005;
     light.current.position.x = 400 + Math.cos(count.current) * 1000;
     light.current.position.y = Math.abs(Math.sin(count.current) * 1000) - 100;
   })
   return (
-    <pointLight castShadow position={[0, 300, 0]} intensity={2000000} color="#fff" shadow-mapSize-height={2048}
+    <pointLight castShadow position={[900, 800, 400]} intensity={2000000} color="#fff" shadow-mapSize-height={2048}
       shadow-mapSize-width={2048} shadow-camera-far={3000} shadow-camera-near={1} ref={light} />
   )
 }
