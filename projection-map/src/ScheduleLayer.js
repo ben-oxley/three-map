@@ -4,7 +4,7 @@ import { Html } from '@react-three/drei';
 import { latLonToWorld } from './utils';
 import Popup from './Popup';
 
-const SCHEDULE_API = 'https://www.emfcamp.org/schedule/2024.json';
+const SCHEDULE_API = 'https://www.emfcamp.org/schedule/2026.json';
 const POLL_INTERVAL_MS = 60000; // 60 seconds
 
 const ScheduleLayer = ({ visible = true }) => {
@@ -62,31 +62,56 @@ const ScheduleLayer = ({ visible = true }) => {
         return () => window.removeEventListener('click', handleGlobalClick);
     }, []);
 
+    // Auto-cycle through events every 10 seconds
+    useEffect(() => {
+        if (!visible || events.length === 0) return;
+
+        const cycleInterval = setInterval(() => {
+            if (selectedLocation) {
+                setClosingLocation(selectedLocation);
+            }
+
+            const currentIndex = events.findIndex(e => e.id === selectedLocation);
+            const nextIndex = (currentIndex + 1) % events.length;
+
+            setSelectedLocation(events[nextIndex].id);
+        }, 10000);
+
+        return () => clearInterval(cycleInterval);
+    }, [visible, events, selectedLocation]);
+
     const processEvents = (data) => {
         // Month is 0-indexed: 5 is June. 2024-06-01 14:40:00 (Saturday of EMF 2024)
-        const now = new Date(2024, 5, 1, 14, 40, 0);
+        const now = new Date();
         const locationMap = new Map();
 
         data.forEach(event => {
-            if (!event.is_from_cfp) return; // Filter out non-CFP events
-            const loc = event.venue;
-            if (!event.latlon) return; // Skip if no coordinates
+            // Uncomment the next line if you ONLY want to see official EMF content, 
+            // but note that events like the Demoscene Jam (official_content: false) will be hidden!
+            if (!event.official_content) return;
 
-            if (!locationMap.has(loc)) {
-                locationMap.set(loc, {
-                    location: loc,
-                    lat: event.latlon[0],
-                    lon: event.latlon[1],
-                    events: []
-                });
-            }
-            // Parse dates
-            // EMF API returns "YYYY-MM-DD HH:MM:SS" which some browsers (Safari/some Node/JS settings) won't parse.
-            // Replace space with T to comply with ISO 8601 subset.
-            locationMap.get(loc).events.push({
-                ...event,
-                start: new Date(event.start_date.replace(' ', 'T')),
-                end: new Date(event.end_date.replace(' ', 'T'))
+            if (!event.occurrences) return;
+
+            event.occurrences.forEach(occurrence => {
+                if (occurrence.latlon) {
+                    const loc = occurrence.venue;
+                    if (!locationMap.has(loc)) {
+                        locationMap.set(loc, {
+                            location: loc,
+                            lat: occurrence.latlon[0],
+                            lon: occurrence.latlon[1],
+                            events: []
+                        });
+                    }
+                    // Parse dates
+                    // EMF API returns "YYYY-MM-DD HH:MM:SS" which some browsers (Safari/some Node/JS settings) won't parse.
+                    // Replace space with T to comply with ISO 8601 subset.
+                    locationMap.get(loc).events.push({
+                        ...event,
+                        start: new Date(occurrence.start_date.replace(' ', 'T')),
+                        end: new Date(occurrence.end_date.replace(' ', 'T'))
+                    });
+                }
             });
         });
 

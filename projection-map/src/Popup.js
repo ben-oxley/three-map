@@ -14,7 +14,7 @@ const Popup = ({ event, position, onClose, isExiting, onExited }) => {
             }}
             style={{
                 width: '300px',
-                transform: 'scale(0.75) rotate(90deg)', // User requested 50% smaller and 90deg rotation
+                transform: 'scale(1.0) rotate(180deg)', // User requested 50% smaller and 90deg rotation
                 transformOrigin: 'center center',
                 padding: '2px', // simulation of border width
                 background: 'linear-gradient(to bottom right, var(--arwes-color-primary) 0%, transparent 20%, transparent 80%, var(--arwes-color-primary) 100%)',

@@ -20,6 +20,10 @@ import fragmentShader from "!!raw-loader!./shaders/clouds.glsl";/* eslint import
 
 const SHOW_SCHEDULE_LAYER = true; // Configurable toggle
 
+const INITIAL_CAMERA_POSITION = [1019.90, 432.77, -2.85];
+const INITIAL_CAMERA_TARGET = [1019.90, -13.09, -2.85];
+const INITIAL_CAMERA_ROLL = -90; // degrees clockwise
+
 const curve1 = new THREE.CatmullRomCurve3([
   new THREE.Vector3(-500, 200, -500),
   new THREE.Vector3(250, 300, -250),
@@ -57,8 +61,8 @@ function App() {
   const geom = useLoader(OBJLoader, './real-size-lq.obj');
   const ref = useRef();
   const camera = useRef();
-  const cameraview = { enabled: true, fullWidth: 1920, fullHeight: 1080, offsetX: 0, offsetY: 540, width: 1920, height: 1080 }
-  const colorMap = useLoader(TextureLoader, "custom-textures/earth-low-res.jpeg");
+  const cameraview = { enabled: true, fullWidth: 1920, fullHeight: 1080, offsetX: 0, offsetY: 0, width: 1920, height: 1080 }
+  const colorMap = useLoader(TextureLoader, "custom-textures/spaceport-graphic.png");
 
   const geometry = useMemo(() => {
     let g;
@@ -101,11 +105,25 @@ function App() {
 
 
   return (
-    <div id="canvas-container">
+    <div id="canvas-container" style={{ position: 'relative' }}>
+      <div id="camera-info" style={{
+        position: 'absolute',
+        top: '10px',
+        left: '10px',
+        zIndex: 100,
+        background: 'rgba(0, 0, 0, 0.7)',
+        color: '#00ff00',
+        padding: '15px',
+        fontFamily: 'monospace',
+        whiteSpace: 'pre',
+        pointerEvents: 'auto',
+        userSelect: 'text',
+        borderRadius: '5px'
+      }}></div>
       <Canvas shadows={{ type: "BasicShadowMap" }} gl={{ preserveDrawingBuffer: true }}>
         <ambientLight intensity={0.3}></ambientLight>
         <PointLight move={false}></PointLight>
-        <ProjectorCamera makeDefault position={[500, 0, 0]} ref={camera} TR={0.25} offsetDeg={20} aspect={16 / 9} near={0.1} far={5000000} view={cameraview} />
+        <ProjectorCamera makeDefault position={INITIAL_CAMERA_POSITION} ref={camera} TR={0.25} offsetDeg={20} aspect={16 / 9} near={0.1} far={5000000} view={cameraview} />
         <mesh ref={ref} position={[343, -50, 160]} rotation={[0, 0, 0]} geometry={geometry} castShadow receiveShadow>
           <RenderTexture></RenderTexture>
           <meshStandardMaterial map={colorMap} />
@@ -167,10 +185,47 @@ function App() {
 function Controls(props) {
   // This reference will give us direct access to the mesh
   const cameraControlsRef = useRef()
+  const target = useMemo(() => new THREE.Vector3(), [])
+  const initialized = useRef(false)
+
+  useFrame(() => {
+    if (cameraControlsRef.current) {
+      if (!initialized.current) {
+        const rollRad = THREE.MathUtils.degToRad(INITIAL_CAMERA_ROLL);
+        cameraControlsRef.current.camera.up.set(Math.sin(rollRad), 0, Math.cos(rollRad));
+        cameraControlsRef.current.updateCameraUp();
+
+        cameraControlsRef.current.setLookAt(
+          ...INITIAL_CAMERA_POSITION,
+          ...INITIAL_CAMERA_TARGET,
+          false
+        )
+        initialized.current = true
+      }
+
+      const { position } = cameraControlsRef.current.camera
+      cameraControlsRef.current.getTarget(target)
+
+      //       const el = document.getElementById('camera-info')
+      //       if (el) {
+      //         el.innerText = `// Current Camera state:
+      // cameraControlsRef.current.setLookAt(
+      //   ${position.x.toFixed(2)},
+      //   ${position.y.toFixed(2)},
+      //   ${position.z.toFixed(2)},
+      //   ${target.x.toFixed(2)},
+      //   ${target.y.toFixed(2)},
+      //   ${target.z.toFixed(2)},
+      //   false
+      // )`
+      //       }
+    }
+  })
+
   // Subscribe this component to the render-loop, rotate the mesh every frame
   // Return view, these are regular three.js elements expressed in JSX
   return (
-    <CameraControls ref={cameraControlsRef} azimuthAngle={-3.14159265 / 2} polarAngle={0} makeDefault />
+    <CameraControls ref={cameraControlsRef} makeDefault />
   )
 }
 
