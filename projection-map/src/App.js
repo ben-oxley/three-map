@@ -112,7 +112,7 @@ function App() {
     const runCycle = () => {
       timeout1 = setTimeout(() => {
         setIsGlitching(false);
-      }, 1000); // Glitch stops 2 seconds after the transition
+      }, 300); // Glitch stops 2 seconds after the transition
 
       timeout2 = setTimeout(() => {
         setIsGlitching(true);
@@ -196,7 +196,7 @@ function App() {
           {(effect === "glitch" || isGlitching) && <Glitch
             delay={isGlitching ? [0, 0] : [1.5, 3.5]} // min and max glitch delay
             duration={isGlitching ? [0.6, 1.0] : [0.6, 1.0]} // min and max glitch duration
-            strength={isGlitching ? [0.3, 0.5] : [0.1, 0.3]} // min and max glitch strength
+            strength={isGlitching ? [0.1, 0.2] : [0.1, 0.3]} // min and max glitch strength
             mode={isGlitching ? GlitchMode.CONSTANT_MILD : GlitchMode.SPORADIC} // glitch mode
             active // turn on/off the effect (switches between "mode" prop and GlitchMode.DISABLED)
             ratio={0.85} // Threshold for strong glitches, 0 - no weak glitches, 1 - no strong glitches.
