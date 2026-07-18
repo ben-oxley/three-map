@@ -62,7 +62,13 @@ function App() {
   const ref = useRef();
   const camera = useRef();
   const cameraview = { enabled: true, fullWidth: 1920, fullHeight: 1080, offsetX: 0, offsetY: 0, width: 1920, height: 1080 }
-  const colorMap = useLoader(TextureLoader, "custom-textures/spaceport-graphic.png");
+  const textures = useLoader(TextureLoader, [
+    "custom-textures/spaceport-graphic.png",
+    "custom-textures/map2026.png"
+  ]);
+  const [activeTextureIndex, setActiveTextureIndex] = useState(0);
+  const [isGlitching, setIsGlitching] = useState(false);
+  const colorMap = textures[activeTextureIndex];
 
   const geometry = useMemo(() => {
     let g;
@@ -99,6 +105,40 @@ function App() {
       }
     }
   }, [payload]);
+
+  useEffect(() => {
+    let timeout1, timeout2, timeout3;
+
+    const runCycle = () => {
+      timeout1 = setTimeout(() => {
+        setIsGlitching(false);
+      }, 1000); // Glitch stops 2 seconds after the transition
+
+      timeout2 = setTimeout(() => {
+        setIsGlitching(true);
+      }, 9000); // Glitch starts 2 seconds before the next transition
+
+      timeout3 = setTimeout(() => {
+        setActiveTextureIndex(prev => 1 - prev);
+        runCycle();
+      }, 10000); // Texture switches 10 seconds after the transition
+    };
+
+    setIsGlitching(false);
+    timeout2 = setTimeout(() => {
+      setIsGlitching(true);
+    }, 6000);
+    timeout3 = setTimeout(() => {
+      setActiveTextureIndex(prev => 1 - prev);
+      runCycle();
+    }, 8000);
+
+    return () => {
+      clearTimeout(timeout1);
+      clearTimeout(timeout2);
+      clearTimeout(timeout3);
+    };
+  }, []);
 
 
 
@@ -153,11 +193,11 @@ function App() {
             granularity={5} // pixel granularity
           />}
           {effect === "dot" && <DotScreen></DotScreen>}
-          {effect === "glitch" && <Glitch
-            delay={[1.5, 3.5]} // min and max glitch delay
-            duration={[0.6, 1.0]} // min and max glitch duration
-            strength={[0.1, 0.3]} // min and max glitch strength
-            mode={GlitchMode.SPORADIC} // glitch mode
+          {(effect === "glitch" || isGlitching) && <Glitch
+            delay={isGlitching ? [0, 0] : [1.5, 3.5]} // min and max glitch delay
+            duration={isGlitching ? [0.6, 1.0] : [0.6, 1.0]} // min and max glitch duration
+            strength={isGlitching ? [0.3, 0.5] : [0.1, 0.3]} // min and max glitch strength
+            mode={isGlitching ? GlitchMode.CONSTANT_MILD : GlitchMode.SPORADIC} // glitch mode
             active // turn on/off the effect (switches between "mode" prop and GlitchMode.DISABLED)
             ratio={0.85} // Threshold for strong glitches, 0 - no weak glitches, 1 - no strong glitches.
           />}
