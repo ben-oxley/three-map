@@ -25,21 +25,23 @@ const INITIAL_CAMERA_TARGET = [1019.90, -13.09, -2.85];
 const INITIAL_CAMERA_ROLL = -90; // degrees clockwise
 
 const curve1 = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(-200, 200, -200),
-  new THREE.Vector3(100, 300, -100),
-  new THREE.Vector3(160, 150, 40),
-  new THREE.Vector3(100, 200, 160),
-  new THREE.Vector3(-100, 250, 200),
-  new THREE.Vector3(-160, 200, 100),
+  new THREE.Vector3(300, 100, -200),
+  new THREE.Vector3(500, 100, 200),
+  new THREE.Vector3(600, 100, 300),
+  new THREE.Vector3(450, 100, 360),
+  new THREE.Vector3(430, 100, 400),
+  new THREE.Vector3(200, 100, 200),
+  new THREE.Vector3(210, 100, 0),
 ], true);
 
 const curve2 = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(200, 200, 200),
-  new THREE.Vector3(-100, 350, 100),
-  new THREE.Vector3(-160, 150, -40),
-  new THREE.Vector3(-100, 200, -160),
-  new THREE.Vector3(100, 250, -200),
-  new THREE.Vector3(160, 200, -100),
+  new THREE.Vector3(100, 200, 200),
+  new THREE.Vector3(230, 200, 330),
+  new THREE.Vector3(400, 200, 400),
+  new THREE.Vector3(500, 200, 450),
+  new THREE.Vector3(600, 200, 400),
+  new THREE.Vector3(500, 200, 300),
+  new THREE.Vector3(300, 200, 200),
 ], true);
 
 //Texture
@@ -110,13 +112,15 @@ function App() {
     let timeout1, timeout2, timeout3;
 
     const runCycle = () => {
-      timeout1 = setTimeout(() => {
-        setTransitionEffect("");
-      }, 300); // Effect stops after the transition
-
       timeout2 = setTimeout(() => {
-        const effects = ["ascii", "pixel", "dot", "glitch", "bloom"];
-        setTransitionEffect(effects[Math.floor(Math.random() * effects.length)]);
+        const effects = ["ascii", "dot", "glitch"];
+        const selectedEffect = effects[Math.floor(Math.random() * effects.length)];
+        setTransitionEffect(selectedEffect);
+
+        const extraTime = (selectedEffect === "pixel" || selectedEffect === "dot") ? 2000 : 300;
+        timeout1 = setTimeout(() => {
+          setTransitionEffect("");
+        }, 1000 + extraTime);
       }, 9000); // Effect starts before the next transition
 
       timeout3 = setTimeout(() => {
@@ -127,8 +131,14 @@ function App() {
 
     setTransitionEffect("");
     timeout2 = setTimeout(() => {
-      const effects = ["ascii", "pixel", "dot", "glitch", "bloom"];
-      setTransitionEffect(effects[Math.floor(Math.random() * effects.length)]);
+      const effects = ["ascii", "dot", "glitch"];
+      const selectedEffect = effects[Math.floor(Math.random() * effects.length)];
+      setTransitionEffect(selectedEffect);
+
+      const extraTime = (selectedEffect === "ascii" || selectedEffect === "dot") ? 2000 : 300;
+      timeout1 = setTimeout(() => {
+        setTransitionEffect("");
+      }, 2000 + extraTime);
     }, 6000);
     timeout3 = setTimeout(() => {
       setActiveTextureIndex(prev => 1 - prev);
