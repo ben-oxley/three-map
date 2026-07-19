@@ -25,21 +25,21 @@ const INITIAL_CAMERA_TARGET = [1019.90, -13.09, -2.85];
 const INITIAL_CAMERA_ROLL = -90; // degrees clockwise
 
 const curve1 = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(-500, 200, -500),
-  new THREE.Vector3(250, 300, -250),
-  new THREE.Vector3(400, 150, 100),
-  new THREE.Vector3(250, 200, 400),
-  new THREE.Vector3(-250, 250, 500),
-  new THREE.Vector3(-400, 200, 250),
+  new THREE.Vector3(-200, 200, -200),
+  new THREE.Vector3(100, 300, -100),
+  new THREE.Vector3(160, 150, 40),
+  new THREE.Vector3(100, 200, 160),
+  new THREE.Vector3(-100, 250, 200),
+  new THREE.Vector3(-160, 200, 100),
 ], true);
 
 const curve2 = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(500, 200, 500),
-  new THREE.Vector3(-250, 350, 250),
-  new THREE.Vector3(-400, 150, -100),
-  new THREE.Vector3(-250, 200, -400),
-  new THREE.Vector3(250, 250, -500),
-  new THREE.Vector3(400, 200, -250),
+  new THREE.Vector3(200, 200, 200),
+  new THREE.Vector3(-100, 350, 100),
+  new THREE.Vector3(-160, 150, -40),
+  new THREE.Vector3(-100, 200, -160),
+  new THREE.Vector3(100, 250, -200),
+  new THREE.Vector3(160, 200, -100),
 ], true);
 
 //Texture
@@ -67,7 +67,7 @@ function App() {
     "custom-textures/map2026.png"
   ]);
   const [activeTextureIndex, setActiveTextureIndex] = useState(0);
-  const [isGlitching, setIsGlitching] = useState(false);
+  const [transitionEffect, setTransitionEffect] = useState("");
   const colorMap = textures[activeTextureIndex];
 
   const geometry = useMemo(() => {
@@ -111,12 +111,13 @@ function App() {
 
     const runCycle = () => {
       timeout1 = setTimeout(() => {
-        setIsGlitching(false);
-      }, 300); // Glitch stops 2 seconds after the transition
+        setTransitionEffect("");
+      }, 300); // Effect stops after the transition
 
       timeout2 = setTimeout(() => {
-        setIsGlitching(true);
-      }, 9000); // Glitch starts 2 seconds before the next transition
+        const effects = ["ascii", "pixel", "dot", "glitch", "bloom"];
+        setTransitionEffect(effects[Math.floor(Math.random() * effects.length)]);
+      }, 9000); // Effect starts before the next transition
 
       timeout3 = setTimeout(() => {
         setActiveTextureIndex(prev => 1 - prev);
@@ -124,9 +125,10 @@ function App() {
       }, 10000); // Texture switches 10 seconds after the transition
     };
 
-    setIsGlitching(false);
+    setTransitionEffect("");
     timeout2 = setTimeout(() => {
-      setIsGlitching(true);
+      const effects = ["ascii", "pixel", "dot", "glitch", "bloom"];
+      setTransitionEffect(effects[Math.floor(Math.random() * effects.length)]);
     }, 6000);
     timeout3 = setTimeout(() => {
       setActiveTextureIndex(prev => 1 - prev);
@@ -178,8 +180,12 @@ function App() {
 
         {/* <pointLight castShadow position={[Math.sin(count.current), 100, Math.cos(count.current)]} intensity={100000} color="#fff" shadow-mapSize-height={512}
           shadow-mapSize-width={512} shadow-camera-far={1000} shadow-camera-near={1} /> */}
-        <SplineShip modelPath="spaceship.glb" curve={curve1} speed={0.05} reverse={true} rotate180={true} />
-        <SplineShip modelPath="spaceship2.glb" curve={curve2} speed={0.03} offset={0.5} reverse={false} />
+        {activeTextureIndex === 0 && (
+          <>
+            <SplineShip scale={3} modelPath="spaceship.glb" curve={curve1} speed={0.05} reverse={true} rotate180={true} />
+            <SplineShip scale={3} modelPath="spaceship2.glb" curve={curve2} speed={0.03} offset={0.5} reverse={false} />
+          </>
+        )}
         <Plane
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, -100, 0]}
@@ -188,20 +194,20 @@ function App() {
           <meshStandardMaterial attach="material" color="black" />
         </Plane>
         <EffectComposer>
-          {effect === "ascii" && <ASCII></ASCII>}
-          {effect === "pixel" && <Pixelation
+          {(effect === "ascii" || transitionEffect === "ascii") && <ASCII></ASCII>}
+          {(effect === "pixel" || transitionEffect === "pixel") && <Pixelation
             granularity={5} // pixel granularity
           />}
-          {effect === "dot" && <DotScreen></DotScreen>}
-          {(effect === "glitch" || isGlitching) && <Glitch
-            delay={isGlitching ? [0, 0] : [1.5, 3.5]} // min and max glitch delay
-            duration={isGlitching ? [0.6, 1.0] : [0.6, 1.0]} // min and max glitch duration
-            strength={isGlitching ? [0.1, 0.2] : [0.1, 0.3]} // min and max glitch strength
-            mode={isGlitching ? GlitchMode.CONSTANT_MILD : GlitchMode.SPORADIC} // glitch mode
+          {(effect === "dot" || transitionEffect === "dot") && <DotScreen></DotScreen>}
+          {(effect === "glitch" || transitionEffect === "glitch") && <Glitch
+            delay={transitionEffect === "glitch" ? [0, 0] : [1.5, 3.5]} // min and max glitch delay
+            duration={transitionEffect === "glitch" ? [0.6, 1.0] : [0.6, 1.0]} // min and max glitch duration
+            strength={transitionEffect === "glitch" ? [0.1, 0.2] : [0.1, 0.3]} // min and max glitch strength
+            mode={transitionEffect === "glitch" ? GlitchMode.CONSTANT_MILD : GlitchMode.SPORADIC} // glitch mode
             active // turn on/off the effect (switches between "mode" prop and GlitchMode.DISABLED)
             ratio={0.85} // Threshold for strong glitches, 0 - no weak glitches, 1 - no strong glitches.
           />}
-          {effect === "bloom" && <Bloom
+          {(effect === "bloom" || transitionEffect === "bloom") && <Bloom
             intensity={5.0} // The bloom intensity.
             blurPass={undefined} // A blur pass.
             kernelSize={KernelSize.LARGE} // blur kernel size
